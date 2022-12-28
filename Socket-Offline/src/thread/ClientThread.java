@@ -5,15 +5,15 @@ import java.net.Socket;
 
 public class ClientThread implements Runnable
 {
-    private final String SERVER_ADDRESS = "127.0.0.1";
-    private final int SERVER_PORT = 5073;
-    private final int CHUNK_SIZE = 4*1024;
+    private static final String SERVER_ADDRESS = "127.0.0.1";
+    private static final int SERVER_PORT = 5073;
+    private static final int CHUNK_SIZE = 4*1024;
 
     private Socket clientSocket;
     private File inputFile;
     private Thread th;
 
-    private PrintWriter pr;
+    private PrintWriter pw;
     private OutputStream out;
     private BufferedInputStream in;
 
@@ -22,6 +22,17 @@ public class ClientThread implements Runnable
         inputFile = new File(filename);
         th = new Thread(this);
         th.start();
+    }
+
+    @Override
+    public void run()
+    {
+        openSocket();
+        writeUploadRequest();
+        if(!checkFileValidity())
+            return;
+        fileUpload();
+        closeStreams();
     }
 
     private void openSocket()
@@ -36,9 +47,9 @@ public class ClientThread implements Runnable
     private void writeUploadRequest()
     {
         try {
-            pr = new PrintWriter(clientSocket.getOutputStream());
-            pr.write("UPLOAD " + inputFile.getName() + "\r\n");
-            pr.flush();
+            pw = new PrintWriter(clientSocket.getOutputStream());
+            pw.write("UPLOAD " + inputFile.getName() + "\r\n");
+            pw.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -48,16 +59,15 @@ public class ClientThread implements Runnable
     {
         try {
             if(!inputFile.exists()) {
-                pr.write("invalid\r\n");
-                pr.flush();
+                pw.write("invalid\r\n");
+                pw.flush();
                 System.out.println("## Given file name is invalid ##");
-
-                pr.close();
+                pw.close();
                 clientSocket.close();
                 return false;
             } else {
-                pr.write("valid\r\n");
-                pr.flush();
+                pw.write("valid\r\n");
+                pw.flush();
             }
         } catch(IOException e) {
             e.printStackTrace();
@@ -90,21 +100,10 @@ public class ClientThread implements Runnable
     private void closeStreams()
     {
         try {
-            pr.close();
+            pw.close();
             clientSocket.close();
         } catch(IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void run()
-    {
-        openSocket();
-        writeUploadRequest();
-        if(!checkFileValidity())
-            return;
-        fileUpload();
-        closeStreams();
     }
 }
