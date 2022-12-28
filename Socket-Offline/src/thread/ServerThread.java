@@ -50,7 +50,9 @@ public class ServerThread implements Runnable
             }
 
             requestedFile = new File(requestedPath.replace("%20", " ").replace("/", separator));
-            if(requestedFile.exists())
+            if(!requestedFile.exists())
+                handleNotFound();
+            else
             {
                 httpResponse = "HTTP/1.1 200 OK\r\n";
                 httpResponse += "Server: Java HTTP Server: 1.0\r\n";
@@ -71,11 +73,11 @@ public class ServerThread implements Runnable
                     handleFile();
                 }
             }
-            else
-                handleNotFound();
 
             closeAllConnection();
         }
+        else
+            closeConnection();
     }
 
     private void handleFile()
@@ -125,7 +127,6 @@ public class ServerThread implements Runnable
                     html += "<a href=\"/" + requestedPath + "/" +
                             subFile.getName() + "\">" + subFile.getName() + "</a> <br>\n";
                 }
-
             }
         }
 
@@ -222,8 +223,9 @@ public class ServerThread implements Runnable
 
     private String extractPath()
     {
-        // GET /... HTTP/1.1
-        // So, unnecessary part of beginning is "GET /" --- 5 characters and ending is " HTTP/1.1" --- 9 characters
+        // Example request: "GET /... HTTP/1.1"
+        // So, unnecessary part of beginning is "GET /" -> 5 characters ...
+        // AND ending is " HTTP/1.1" -> 9 characters
         return httpRequest.substring(5, httpRequest.length()-9);
     }
 }
