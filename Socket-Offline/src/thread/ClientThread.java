@@ -61,7 +61,7 @@ public class ClientThread implements Runnable
             if(!inputFile.exists()) {
                 pw.write("invalid\r\n");
                 pw.flush();
-                System.out.println("## Given file name is invalid ##");
+                System.out.println("### Given file name is invalid ###");
                 pw.close();
                 clientSocket.close();
                 return false;

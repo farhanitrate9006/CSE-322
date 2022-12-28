@@ -29,11 +29,10 @@ public class Server
         logDir.mkdir();
 
         ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
-        System.out.println("## Waiting for connection on port no: " + SERVER_PORT + "##\n");
+        System.out.println("### Waiting for connection on port no: " + SERVER_PORT + " ###\n");
 
         /* starting accepting http requests */
-        while(true) {
-            //new ServerThread(serverSocket.accept(), ABSOLUTE_PATH_TO_ROOT, ABSOLUTE_PATH_TO_LOG, SERVER_PORT);
-        }
+        while(true)
+            new ServerThread(serverSocket.accept(), ROOT_PATH, UPLOADED_PATH, LOG_PATH);
     }
 }
