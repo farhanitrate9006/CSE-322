@@ -17,9 +17,9 @@ public class ClientThread implements Runnable
     private OutputStream out;
     private BufferedInputStream in;
 
-    public ClientThread(String filename)
+    public ClientThread(String filename, String CLIENT_PATH)
     {
-        inputFile = new File(filename);
+        inputFile = new File(CLIENT_PATH + "\\" + filename);
         th = new Thread(this);
         th.start();
     }
@@ -29,8 +29,11 @@ public class ClientThread implements Runnable
     {
         openSocket();
         writeUploadRequest();
-        if(!checkFileValidity())
+        if(!inputFile.exists())
+        {
+            System.out.println("### Given file does not exist ###");
             return;
+        }
         fileUpload();
         closeStreams();
     }
@@ -55,30 +58,11 @@ public class ClientThread implements Runnable
         }
     }
 
-    private boolean checkFileValidity()
-    {
-        try {
-            if(!inputFile.exists()) {
-                pw.write("invalid\r\n");
-                pw.flush();
-                System.out.println("### Given file name is invalid ###");
-                pw.close();
-                clientSocket.close();
-                return false;
-            } else {
-                pw.write("valid\r\n");
-                pw.flush();
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
     private void fileUpload()
     {
         int count;
         byte[] buffer = new byte[CHUNK_SIZE];
+        //System.out.println(inputFile.length());
 
         try {
             out = clientSocket.getOutputStream();

@@ -12,6 +12,7 @@ public class ServerThread implements Runnable
     private static String UPLOADED_PATH = null;
     private static String LOG_PATH = null;
     private static int request_no = 0;
+    private static final int CHUNK_SIZE = 4*1024;
 
     private BufferedReader br;
     private PrintWriter pw, fw;
@@ -36,6 +37,12 @@ public class ServerThread implements Runnable
         receiveRequest();
         if(httpRequest == null)
             closeConnection();
+        else if(httpRequest.startsWith("UPLOAD"))
+        {
+            handleUpload();
+            closeConnection();
+            //System.out.println("upload completed");
+        }
         else if(httpRequest.startsWith("GET") && httpRequest.endsWith("HTTP/1.1")) // GET /... HTTP/1.1
         {
             openWriters();
@@ -80,6 +87,31 @@ public class ServerThread implements Runnable
             closeConnection();
     }
 
+    private void handleUpload()
+    {
+        // Example request: "UPLOAD ..."
+        // So, unnecessary part is "UPLOAD " -> 7 characters ...
+        String fileName = httpRequest.substring(7);
+        requestedFile = new File(UPLOADED_PATH + "\\" + fileName);
+        byte[] buffer = new byte[CHUNK_SIZE];
+        int count;
+
+        try {
+            FileOutputStream fos =
+                    new FileOutputStream(requestedFile);
+            InputStream in = serverSocket.getInputStream();
+
+            while((count=in.read(buffer)) > 0)
+                fos.write(buffer, 0, count);
+
+            in.close();
+            fos.close();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+        //System.out.println(requestedFile.length());
+    }
+
     private void handleFile()
     {
         httpResponse += "Content-Length: " + requestedFile.length() + "\r\n";
@@ -89,7 +121,7 @@ public class ServerThread implements Runnable
         pw.flush();
 
         int count;
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[CHUNK_SIZE];
 
         try {
             OutputStream out = serverSocket.getOutputStream();
