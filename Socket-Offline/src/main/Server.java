@@ -11,22 +11,22 @@ public class Server
     private static final String ROOT_PATH = "root";
     private static final String UPLOADED_PATH = "uploaded";
     private static final String LOG_PATH = "log";
-    private static final int SERVER_PORT = 5073;
+    private static final int SERVER_PORT = 5173;
 
     private static void resetFolder(String PATH)
     {
-        File logDir = new File(PATH);
-        if(logDir.exists())
+        File directory = new File(PATH);
+        if(directory.exists()) // deleting previous folder
         {
-            String[] entries = logDir.list();
+            String[] entries = directory.list();
             for(String entry: entries)
             {
-                File deleteLog = new File(logDir.getPath(), entry);
+                File deleteLog = new File(directory.getPath(), entry);
                 deleteLog.delete();
             }
-            logDir.delete();
+            directory.delete();
         }
-        logDir.mkdir();
+        directory.mkdir(); // and creating a new one
     }
 
     public static void main(String[] args) throws IOException

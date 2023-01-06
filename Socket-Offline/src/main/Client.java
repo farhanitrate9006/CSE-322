@@ -14,7 +14,7 @@ public class Client
 
         while(true)
         {
-            System.out.println("### Write <file-name> (Or <exit> to Exit) ###");
+            // System.out.println("### Write <file-name> (Or <exit> to Exit) ###");
             command = sc.nextLine();
             if(command.equals("exit"))
                 break;

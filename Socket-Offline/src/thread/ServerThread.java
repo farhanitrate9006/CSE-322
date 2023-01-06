@@ -4,21 +4,32 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Date;
 
+enum ValidExtension
+{
+    txt,
+    jpg,
+    png,
+    pdf,
+    mp4
+}
+
 public class ServerThread implements Runnable
 {
-    private final String SEPARATOR = File.separator + File.separator;
+    private final String SEPARATOR = File.separator + File.separator; // SEPARATOR will vary in different OS
     private final Socket serverSocket;
+
+    // different paths for different folders
     private static String ROOT_PATH = null;
     private static String UPLOADED_PATH = null;
     private static String LOG_PATH = null;
-    private static int request_no = 0;
-    private static final int CHUNK_SIZE = 4*1024;
+
+    private static int request_no = 0; // to keep count of http request-response log files
+    private static final int CHUNK_SIZE = 4*1024; // will be used for downloading/uploading
 
     private BufferedReader br;
     private PrintWriter pw, fw;
-    private String html, httpRequest, httpResponse, requestedPath;
+    private String html, httpRequest, httpResponse, requestedPath; // necessary strings
     private File requestedFile;
-    // private StringBuilder sb;
 
     public ServerThread(Socket socket, String ROOT_PATH, String UPLOADED_PATH, String LOG_PATH)
     {
@@ -32,30 +43,35 @@ public class ServerThread implements Runnable
     @Override
     public void run()
     {
-        //sb = new StringBuilder();
         openStreams();
         receiveRequest();
         if(httpRequest == null)
             closeConnection();
         else if(httpRequest.startsWith("UPLOAD"))
         {
+            if(!checkFormat())
+            {
+                closeConnection();
+                return;
+            }
             handleUpload();
             closeConnection();
-            //System.out.println("upload completed");
+            // System.out.println("upload completed");
         }
-        else if(httpRequest.startsWith("GET") && httpRequest.endsWith("HTTP/1.1")) // GET /... HTTP/1.1
+        else if(httpRequest.startsWith("GET") && httpRequest.endsWith("HTTP/1.1")) // Example: "GET /... HTTP/1.1"
         {
             openWriters();
             fw.println("http request from client:\n" + httpRequest + "\n\nhttp response from server:");
-            requestedPath = extractPath();
+            requestedPath = extractPath(); // extracting only the necessary portions
 
-            if(requestedPath.equals(""))
+            if(requestedPath.equals("")) // requesting for root folder ("GET / HTTP/1.1")
             {
                 handleRoot();
                 closeAllConnection();
                 return;
             }
 
+            // path transformation (to be consistent with local file system naming)
             requestedFile = new File(requestedPath.replace("%20", " ").replace("/", SEPARATOR));
             if(!requestedFile.exists())
                 handleNotFound();
@@ -71,6 +87,7 @@ public class ServerThread implements Runnable
                 {
                     int temp = requestedFile.getName().lastIndexOf('.');
                     String fileExtension = requestedFile.getName().substring(temp+1);
+
                     if(fileExtension.equals("png") || fileExtension.equals("jpg"))
                         httpResponse += "Content-Type: image/jpg\r\n";
                     else if(fileExtension.equals("txt"))
@@ -87,6 +104,38 @@ public class ServerThread implements Runnable
             closeConnection();
     }
 
+    private boolean checkFormat()
+    {
+        // Example request: "UPLOAD ..."
+        // So, unnecessary part is "UPLOAD " -> 7 characters ...
+        String fileName = httpRequest.substring(7);
+        int temp = fileName.lastIndexOf('.');
+        String fileExtension = fileName.substring(temp+1);
+
+        try {
+            pw = new PrintWriter(serverSocket.getOutputStream());
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        for(ValidExtension extension : ValidExtension.values())
+        {
+            if(extension.name().equals(fileExtension)) // valid extension
+            {
+                pw.println("yes");
+                pw.println("\r\n");
+                pw.flush();
+                return true;
+            }
+        }
+
+        // invalid extension
+        pw.println("no");
+        pw.println("\r\n");
+        pw.flush();
+        return false;
+    }
+
     private void handleUpload()
     {
         // Example request: "UPLOAD ..."
@@ -97,8 +146,7 @@ public class ServerThread implements Runnable
         int count;
 
         try {
-            FileOutputStream fos =
-                    new FileOutputStream(requestedFile);
+            FileOutputStream fos = new FileOutputStream(requestedFile);
             InputStream in = serverSocket.getInputStream();
 
             while((count=in.read(buffer)) > 0)
@@ -109,10 +157,9 @@ public class ServerThread implements Runnable
         } catch(IOException e) {
             e.printStackTrace();
         }
-        //System.out.println(requestedFile.length());
     }
 
-    private void handleFile()
+    private void handleFile() // file will be sent chunk-by-chunk
     {
         httpResponse += "Content-Length: " + requestedFile.length() + "\r\n";
         fw.println(httpResponse);
@@ -140,19 +187,19 @@ public class ServerThread implements Runnable
         }
     }
 
-    private void handleDirectory()
+    private void handleDirectory() // sub-file or sub-folder list will be rendered as html links
     {
         httpResponse += "Content-Type: text/html\r\n";
         html = "<html>\n<body>\n";
 
         File[] subFiles = requestedFile.listFiles();
-        assert subFiles != null;
+        assert subFiles != null; // intellij suggested so, hence added this line
         if(subFiles.length == 0)
             html += "<h1> Directory is currently empty </h1>\n";
         else
         {
             for (File subFile : subFiles) {
-                if (subFile.isDirectory()) {
+                if (subFile.isDirectory()) { // italic font (<em>) for sub-directory
                     html += "<em> <a href=\"/" + requestedPath + "/" +
                             subFile.getName() + "\">" + subFile.getName() + "</a> </em> <br>\n";
                 } else if (subFile.isFile()) {
@@ -200,6 +247,8 @@ public class ServerThread implements Runnable
         httpResponse += "Date: " + new Date() + "\r\n";
         httpResponse += "Content-Length: " + html.length() + "\r\n";
 
+        System.out.println("### Requested path: /" + requestedPath.replace("%20", " "));
+        System.out.println("### Page 404: Path Not Found");
         fw.println(httpResponse);
         pw.write(httpResponse);
         pw.write("\r\n");

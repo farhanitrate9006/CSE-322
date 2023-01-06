@@ -6,7 +6,7 @@ import java.net.Socket;
 public class ClientThread implements Runnable
 {
     private static final String SERVER_ADDRESS = "127.0.0.1";
-    private static final int SERVER_PORT = 5073;
+    private static final int SERVER_PORT = 5173;
     private static final int CHUNK_SIZE = 4*1024;
 
     private Socket clientSocket;
@@ -27,13 +27,15 @@ public class ClientThread implements Runnable
     @Override
     public void run()
     {
-        openSocket();
-        writeUploadRequest();
         if(!inputFile.exists())
         {
-            System.out.println("### Given file does not exist ###");
+            System.out.println("### Given file does not exist");
             return;
         }
+        openSocket();
+        writeUploadRequest();
+        if(!fileStatus())
+            return;
         fileUpload();
         closeStreams();
     }
@@ -58,11 +60,29 @@ public class ClientThread implements Runnable
         }
     }
 
+    private boolean fileStatus() // if server says file format is okay, only then fill will be sent
+    {
+        String fileFormatValid = null;
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            // in = new BufferedInputStream(clientSocket.getInputStream());
+            fileFormatValid = br.readLine();
+            // System.out.println(fileFormatValid);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+        assert fileFormatValid != null; // intellij suggested so, hence added this line
+        if(fileFormatValid.equals("yes"))
+            return true;
+        System.out.println("### File format is not valid");
+        return false;
+    }
+
     private void fileUpload()
     {
         int count;
         byte[] buffer = new byte[CHUNK_SIZE];
-        //System.out.println(inputFile.length());
+        // System.out.println(inputFile.length());
 
         try {
             out = clientSocket.getOutputStream();
