@@ -6,7 +6,7 @@ import java.util.Date;
 
 public class ServerThread implements Runnable
 {
-    private final String separator = File.separator + File.separator;
+    private final String SEPARATOR = File.separator + File.separator;
     private final Socket serverSocket;
     private static String ROOT_PATH = null;
     private static String UPLOADED_PATH = null;
@@ -56,7 +56,7 @@ public class ServerThread implements Runnable
                 return;
             }
 
-            requestedFile = new File(requestedPath.replace("%20", " ").replace("/", separator));
+            requestedFile = new File(requestedPath.replace("%20", " ").replace("/", SEPARATOR));
             if(!requestedFile.exists())
                 handleNotFound();
             else
@@ -247,7 +247,7 @@ public class ServerThread implements Runnable
     {
         try {
             pw = new PrintWriter(serverSocket.getOutputStream());
-            fw = new PrintWriter(LOG_PATH + separator + "log-" + (++request_no) + ".txt");
+            fw = new PrintWriter(LOG_PATH + SEPARATOR + "log-" + (++request_no) + ".txt");
         } catch(IOException e) {
             e.printStackTrace();
         }
