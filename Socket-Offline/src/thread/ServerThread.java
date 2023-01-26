@@ -49,14 +49,9 @@ public class ServerThread implements Runnable
             closeConnection();
         else if(httpRequest.startsWith("UPLOAD"))
         {
-            if(!checkFormat())
-            {
-                closeConnection();
-                return;
-            }
-            handleUpload();
+            if(checkFormat())
+                handleUpload();
             closeConnection();
-            // System.out.println("upload completed");
         }
         else if(httpRequest.startsWith("GET") && httpRequest.endsWith("HTTP/1.1")) // Example: "GET /... HTTP/1.1"
         {
