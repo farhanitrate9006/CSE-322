@@ -1,0 +1,13 @@
+Sent Packets:  1522
+Dropped Packets:  76
+Received Packets:  1440
+-------------------------------------------------------------
+Throughput:  238298 bits/sec
+Average Delay:  0.559198 seconds
+Delivery ratio:  0.946124
+Drop ratio:  0.0499343
+Sent Packets:  0
+Dropped Packets:  0
+Received Packets:  0
+-------------------------------------------------------------
+Throughput:  0 bits/sec
