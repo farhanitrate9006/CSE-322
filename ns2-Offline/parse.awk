@@ -32,7 +32,7 @@ BEGIN {
     }
 
 
-    if (layer == "AGT" && packet_type == "tcp") {
+    if (layer == "AGT" && packet_type == "cbr") {
         
         if(event == "s") {
             sent_time[packet_id] = time_sec;
@@ -53,7 +53,7 @@ BEGIN {
         }
     }
 
-    if (packet_type == "tcp" && event == "D") {
+    if (packet_type == "cbr" && event == "D") {
         dropped_packets += 1;
     }
 }
@@ -68,5 +68,5 @@ END {
     # print "Received Packets: ", received_packets;
     # print "-------------------------------------------------------------";
     print (received_bytes * 8) / simulation_time, (total_delay / received_packets),
-     received_packets / sent_packets, dropped_packets / sent_packets;
+    (received_packets * 100) / sent_packets, (dropped_packets * 100) / sent_packets;
 }
