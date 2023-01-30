@@ -9,7 +9,7 @@ BEGIN {
     end_time = 0;
 
     # constants
-    header_bytes = 20;
+    header_bytes = 8;
 }
 
 
@@ -67,6 +67,6 @@ END {
     # print "Dropped Packets: ", dropped_packets;
     # print "Received Packets: ", received_packets;
     # print "-------------------------------------------------------------";
-    print (received_bytes * 8) / simulation_time, (total_delay / received_packets),
+    print (received_bytes * 8) / (simulation_time * 1000), (total_delay / received_packets),
     (received_packets * 100) / sent_packets, (dropped_packets * 100) / sent_packets;
 }

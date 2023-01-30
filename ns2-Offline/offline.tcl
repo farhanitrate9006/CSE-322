@@ -8,7 +8,7 @@ set val(chan)         Channel/WirelessChannel  ;# channel type
 set val(prop)         Propagation/TwoRayGround ;# radio-propagation model
 set val(ant)          Antenna/OmniAntenna      ;# Antenna type
 set val(ll)           LL                       ;# Link layer type
-set val(ifq)          CMUPriQueue  ;# Interface queue type
+set val(ifq)          CMUPriQueue              ;# Interface queue type
 set val(ifqlen)       50                       ;# max packet in ifq
 set val(netif)        Phy/WirelessPhy          ;# network interface type
 set val(mac)          Mac/802_11               ;# MAC type
@@ -18,9 +18,9 @@ set val(as) [lindex $argv 0]  ;# area side
 set val(nn) [lindex $argv 1]  ;# number of mobilenodes
 set val(nf) [lindex $argv 2]  ;# number of flows
 
-set val(rand_calc_val) 5000
-set val(node_min_speed) 1
-set val(node_max_speed) 5
+set rand_calc_val 5000
+set node_min_speed 1
+set node_max_speed 5
 # =======================================================================
 
 # trace file
@@ -38,6 +38,30 @@ $topo load_flatgrid $val(as) $val(as) ;# $val(as) x $val(as) area size
 # general operation director for mobilenodes
 create-god $val(nn)
 
+# user-defined functions #
+
+proc random_coordinate {} {
+    global ns val
+    global ns rand_calc_val
+
+    set temp [ expr int($rand_calc_val * rand()) % $val(as) ]
+    if { $temp != 0 && $temp != $val(as) } {
+        return $temp
+    }
+    return [ expr int(($val(as) * 0.9) * rand()) + 10 ]
+}
+
+proc random_node {} {
+    global ns val
+    global ns rand_calc_val
+    return [ expr int($rand_calc_val * rand()) % $val(nn) ]
+}
+
+proc random_motion {} {
+    global ns node_max_speed
+    global ns node_min_speed
+    return [ expr int(($node_max_speed - $node_min_speed) * rand()) + 1 ]
+}
 
 # configuring nodes
 
@@ -59,35 +83,34 @@ $ns node-config -adhocRouting $val(rp) \
 # create nodes
 for {set i 0} {$i < $val(nn) } {incr i} {
     set node($i) [$ns node]
-    $node($i) random-motion 0       ;# disable random motion
+    # $node($i) random-motion 0       ;# disable random motion
 
     # setting coordinates for node
-    $node($i) set X_ [expr int($val(rand_calc_val) * rand()) % $val(as) + 3]
-    $node($i) set Y_ [expr int($val(rand_calc_val) * rand()) % $val(as) + 3]
+    $node($i) set X_ [random_coordinate]
+    $node($i) set Y_ [random_coordinate]
     $node($i) set Z_ 0
 
+    # 20 => node-size
     $ns initial_node_pos $node($i) 20
-}
 
-# producing node movements with uniform random speed
-for {set i 0} {$i < $val(nn) } {incr i} {
-    $ns at [expr int(20 * rand()) + 10] "$node($i) setdest [expr int($val(rand_calc_val) * rand()) % $val(as)] [expr int($val(rand_calc_val) * rand()) % $val(as)] [expr int($val(rand_calc_val) * rand()) % $val(node_max_speed) + $val(node_min_speed) - 1]"
+    # producing node movements with uniform random speed
+    $ns at [expr int(20 * rand()) + 10] "$node($i) setdest [random_coordinate] [random_coordinate] [random_motion]"
 }
 
 # generating flows
 # 1 sink, random source
-set dest [ expr int($val(rand_calc_val) * rand()) % $val(nn) ]
+set dest [random_node]
 
 for {set i 0} {$i < $val(nf)} {incr i} {
-    
-    while {$dest == $dest} {
-        set src [ expr int($val(rand_calc_val) * rand()) % $val(nn) ]
+    # looping until src & dest are different 
+    while {1} {
+        set src [random_node]
         if {$src != $dest} {
             break
         } 
     }
 
-    # Setup a UDP connection
+    # Setup a UDP connection #
     set udp [new Agent/UDP]
     set null [new Agent/Null]
     # attach to nodes
@@ -99,7 +122,7 @@ for {set i 0} {$i < $val(nf)} {incr i} {
     $udp set class_ $i
     $udp set fid_ $i
 
-    # Setup a CBR over UDP connection
+    # Setup a CBR over UDP connection #
     # creating application-layer traffic/flow generator
     set cbr [new Application/Traffic/CBR]
     # attach to agent
