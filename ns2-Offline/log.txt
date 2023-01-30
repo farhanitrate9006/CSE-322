@@ -1,7 +1,0 @@
-Area-Size(m/side)
-Network-Throughtput(kilobits/sec) End-to-End-Avg-Delay(sec) Packet-Delivery-Ratio(%) Packet-Drop-Ratio(%)
-250
-693.13 6.13534 3.97832 95.9515
-500
-528.855 4.71988 2.9255 96.9191
-750
